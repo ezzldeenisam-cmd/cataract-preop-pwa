@@ -177,6 +177,37 @@ No `.env` or API key needed — this variant has no AI dependency at all.
 
 ---
 
+## 9b. Installing on iPhone (or any phone) — live deployment
+
+Service workers (the thing that makes offline work) only run in a **secure context**:
+HTTPS, or `localhost`. A LAN address like `http://192.168.x.x:5174` does **not**
+qualify, so the dev server can't be installed as an offline-capable app on a phone —
+only the deployed HTTPS build can.
+
+The app is deployed to GitHub Pages at:
+
+**https://ezzldeenisam-cmd.github.io/cataract-preop-pwa/**
+
+On the iPhone: open that link in Safari → Share → **Add to Home Screen**. After the
+first load it keeps working with the network off, including PDF export.
+
+To publish a change:
+
+```bash
+npm run deploy   # builds, then pushes dist/ to the gh-pages branch
+```
+
+This pushes to the `gh-pages` branch of the `ezzldeenisam-cmd/cataract-preop-pwa`
+GitHub repo (public — required for free GitHub Pages on a personal account; only the
+app's source code is public, patient data never leaves `localStorage` on the device).
+GitHub Pages usually finishes rebuilding within ~30–60 seconds of a `npm run deploy`.
+
+`vite.config.ts` sets `base: '/cataract-preop-pwa/'` for production builds specifically
+so asset paths resolve correctly under the GitHub Pages subpath — local `npm run dev`
+still serves from `/` unaffected.
+
+---
+
 ## 10. Non-negotiable constraints
 
 - **Never compute IOL power** anywhere in the app. Astigmatism magnitude (`|K1-K2|`) is
