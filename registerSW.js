@@ -1,0 +1,1 @@
+if('serviceWorker' in navigator) {window.addEventListener('load', () => {navigator.serviceWorker.register('/cataract-preop-pwa/sw.js', { scope: '/cataract-preop-pwa/' })})}
