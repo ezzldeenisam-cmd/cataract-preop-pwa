@@ -144,35 +144,6 @@
   color: var(--red);
 }
 
-.mini-fields {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(90px, 1fr));
-  gap: 10px;
-}
-
-.mini-field {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  font-size: 13px;
-  color: var(--text);
-}
-
-.mini-field input {
-  padding: 8px 10px;
-  border: 1px solid var(--border);
-  border-radius: 6px;
-  background: var(--bg);
-  color: var(--text-h);
-  font-size: 15px;
-}
-
-.derived-value {
-  margin: 10px 0 0;
-  font-size: 13px;
-  color: var(--text);
-}
-
 .photo-preview {
   display: flex;
   align-items: center;

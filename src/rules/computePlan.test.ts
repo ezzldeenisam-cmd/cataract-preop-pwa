@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { computeAstigmatism, computePlan } from './computePlan';
+import { computePlan } from './computePlan';
 import type { PatientInput } from './types';
 
 function baseInput(overrides: Partial<PatientInput> = {}): PatientInput {
@@ -18,19 +18,6 @@ function baseInput(overrides: Partial<PatientInput> = {}): PatientInput {
     ...overrides,
   };
 }
-
-describe('computeAstigmatism', () => {
-  it('is the absolute difference between K1 and K2', () => {
-    expect(computeAstigmatism({ k1: 44, k2: 42.5 })).toBeCloseTo(1.5);
-    expect(computeAstigmatism({ k1: 42.5, k2: 44 })).toBeCloseTo(1.5);
-  });
-
-  it('is 0 when K1 or K2 is missing', () => {
-    expect(computeAstigmatism({})).toBe(0);
-    expect(computeAstigmatism({ k1: 44 })).toBe(0);
-    expect(computeAstigmatism({ k2: 44 })).toBe(0);
-  });
-});
 
 describe('computePlan', () => {
   it('immature cataract requires optical biometry, no hard stops', () => {

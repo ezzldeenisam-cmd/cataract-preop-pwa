@@ -1,9 +1,9 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { IntakeForm } from './components/IntakeForm';
 import { PlanView } from './components/PlanView';
 import { RecordList } from './components/RecordList';
 import { computePlan } from './rules/computePlan';
-import type { PatientInput, PatientRecord, Plan } from './rules/types';
+import type { PatientInput, PatientRecord } from './rules/types';
 import { loadRecords, saveRecord } from './storage';
 import './App.css';
 
@@ -25,8 +25,9 @@ const DEFAULT_INPUT: PatientInput = {
 
 function App() {
   const [input, setInput] = useState<PatientInput>(DEFAULT_INPUT);
-  const [plan, setPlan] = useState<Plan | null>(null);
   const [records, setRecords] = useState<PatientRecord[]>([]);
+
+  const plan = useMemo(() => computePlan(input), [input]);
 
   useEffect(() => {
     setRecords(loadRecords());
@@ -36,13 +37,8 @@ function App() {
     setInput((prev) => ({ ...prev, ...patch }));
   }
 
-  function handleGenerate() {
-    setPlan(computePlan(input));
-  }
-
   function handleClear() {
     setInput(DEFAULT_INPUT);
-    setPlan(null);
   }
 
   function handleSave() {
@@ -52,7 +48,6 @@ function App() {
 
   function handleSelectRecord(record: PatientRecord) {
     setInput(record);
-    setPlan(computePlan(record));
   }
 
   return (
@@ -62,21 +57,13 @@ function App() {
       </header>
 
       <main className="app-main">
-        <IntakeForm
-          input={input}
-          onChange={handleChange}
-          onGenerate={handleGenerate}
-          onClear={handleClear}
-          onSave={handleSave}
-        />
+        <IntakeForm input={input} onChange={handleChange} onClear={handleClear} onSave={handleSave} />
 
-        {plan && (
-          <PlanView
-            plan={plan}
-            chosenLens={input.chosenLens}
-            onChosenLensChange={(chosenLens) => handleChange({ chosenLens })}
-          />
-        )}
+        <PlanView
+          plan={plan}
+          chosenLens={input.chosenLens}
+          onChosenLensChange={(chosenLens) => handleChange({ chosenLens })}
+        />
 
         <RecordList records={records} onSelect={handleSelectRecord} />
       </main>

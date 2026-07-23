@@ -21,20 +21,24 @@ comes from the biometry device or a validated external calculator.
   Install App), works fully with no network connection after the first load. No
   server-side piece at all — this variant has no AI/API dependency, so there's nothing
   that needs a network to function.
-- **No AI photo scanning.** The original's "Scan Biometry Sheet (AI)" / "Scan
-  Refraction Sheet" OCR buttons are gone, along with the `@anthropic-ai/sdk` dependency,
-  the Vite middleware plugin, and the `.env` API key. Biometry and refraction values are
-  typed in manually. The plain **"Add Biometry Photo"** button remains — it just
-  compresses and attaches a photo, no AI, no network call — and that photo still ends up
-  in the PDF export.
+- **No AI photo scanning, no manual numbers.** The original's "Scan Biometry Sheet
+  (AI)" / "Scan Refraction Sheet" OCR buttons are gone, along with the
+  `@anthropic-ai/sdk` dependency, the Vite middleware plugin, and the `.env` API key.
+  Biometry and refraction are **photo-only** — "Add Biometry Photo" / "Add Refraction
+  Photo" just compress and attach a photo (no AI, no network call, no numbers typed
+  anywhere), and both photos end up in the PDF export, one page each. There is no
+  derived astigmatism value anymore since K1/K2 are never entered.
 - **Visual Acuity field.** A free-text field (e.g. `6/9`, `20/40`, `CF`) is now part of
   the intake form and appears in the PDF export table.
 - **No lens-suggestion engine.** The original ranked lens types (Monofocal / EDOF /
   Trifocal, toric or not) based on macula status, cataract maturity, and occupation.
   That ranking is removed entirely — the app only computes tests, hard stops, and
   reminders. The doctor picks the lens directly from the **Lens Chosen** dropdown after
-  discussing options with the patient; occupation and astigmatism are still recorded as
-  context for that discussion, they just don't drive an algorithm anymore.
+  discussing options with the patient; occupation is still recorded as context for that
+  discussion, it just doesn't drive an algorithm anymore.
+- **Plan is always visible, no button.** The original required tapping "Generate
+  Plan". Here the plan (tests/hard-stops/reminders/lens choice) recomputes live from
+  the form on every keystroke — nothing to click before the doctor can see it.
 
 Everything else — the rule engine's tests/hard-stops/reminders logic, localStorage-only
 storage, the PDF export (including the Arabic-text-as-image workaround), and the
@@ -71,13 +75,11 @@ once saved):
 | `prostateMedication` | boolean | alpha-blocker use → IFIS reminder |
 | `pupilDilation` | `good` \| `poor` | poor → iris hooks reminder |
 | `chosenLens` | one of `CHOSEN_LENS_OPTIONS`, optional | the doctor's own decision — the only lens field in the app |
-| `axialLength`, `acDepth`, `k1`, `k2` | number, optional | biometry values, typed manually |
-| `refractionSphere`, `refractionCylinder`, `refractionAxis` | number, optional | refraction values, typed manually |
-| `biometryImage` | string (base64 JPEG data URL), optional | photo of the biometry sheet, attached independently |
+| `biometryImage` | string (base64 JPEG data URL), optional | photo of the biometry sheet — the only biometry data captured |
+| `refractionImage` | string (base64 JPEG data URL), optional | photo of the refraction sheet — the only refraction data captured |
 
-There is **no manual astigmatism field**. Astigmatism is always derived:
-`computeAstigmatism({k1, k2}) = |k1 − k2|` (0 if K1/K2 aren't filled in yet) — plain
-keratometry math, shown to the doctor as context, not used to rank anything.
+There are no numeric biometry or refraction fields at all, and no derived astigmatism
+value — the surgeon reads both off the attached photos directly.
 
 ---
 
@@ -103,12 +105,13 @@ CTR; `pupilDilation === 'poor'` → prepare iris hooks; `prostateMedication` →
 ## 5. UI flow (`src/App.tsx` + `src/components/`)
 
 1. **Intake form** (`IntakeForm.tsx`) — all fields above, segmented controls for enums,
-   checkboxes for chronic conditions, the biometry photo attach button, a read-only
-   derived astigmatism line.
-2. **"Generate Plan"** → renders `PlanView.tsx`: ready/not-ready badge, hard stops
-   (red), required tests (checklist), the **Lens Chosen** dropdown, reminders (amber).
+   checkboxes for chronic conditions, the biometry and refraction photo attach buttons.
+2. **`PlanView.tsx` is always rendered**, recomputed live from `input` on every change
+   (`useMemo(() => computePlan(input), [input])` in `App.tsx`) — no button, no stale
+   state: ready/not-ready badge, hard stops (red), required tests (checklist), the
+   **Lens Chosen** dropdown, reminders (amber).
 3. **"Save Patient to Record"** → persists to `localStorage` via `storage.ts`. Tapping a
-   saved patient reloads it into the form and regenerates its plan.
+   saved patient reloads it into the form; its plan recomputes automatically.
 4. **Saved Patients list** — checkbox per patient to select for export, "Export PDF"
    button.
 
@@ -116,10 +119,11 @@ CTR; `pupilDilation === 'poor'` → prepare iris hooks; `prostateMedication` →
 
 ## 6. Photo attachment
 
-**"Add Biometry Photo"** compresses the photo (`src/image.ts`, canvas-resized to
-≤900px, JPEG quality 0.7, ~50–150KB typical) and stores it as `biometryImage` on the
-patient. No network call, works fully offline. Shown as a thumbnail with a "Remove
-photo" link in the form, and is what appears in the PDF export (§7).
+**"Add Biometry Photo"** and **"Add Refraction Photo"** both compress the photo
+(`src/image.ts`, canvas-resized to ≤900px, JPEG quality 0.7, ~50–150KB typical) and
+store it as `biometryImage` / `refractionImage` on the patient. No network call, works
+fully offline. Each is shown as a thumbnail with a "Remove photo" link in the form, and
+each gets its own page in the PDF export (§7).
 
 ---
 
@@ -131,8 +135,8 @@ export (checkboxes). "Export PDF (n)" then:
 
 1. **Page 1(+): a compact table** — columns Name, Eye, Status (Ready/Not Ready), VA,
    Lens (the doctor's chosen lens, or "—" if not yet decided), Special Problems,
-   Refraction, Biometry, Prepare (CTR/iris hooks).
-2. **One page per patient with an attached photo**, after the table.
+   Refraction ("Photo attached" or "—"), Prepare (CTR/iris hooks).
+2. **One page per attached photo** (biometry and/or refraction), after the table.
 
 **Arabic text in the PDF:** `jsPDF.text()` can't shape Arabic script — any cell/heading
 containing Arabic (`/[؀-ۿ]/` test) is rendered to an offscreen `<canvas>` (which shapes
@@ -210,8 +214,9 @@ still serves from `/` unaffected.
 
 ## 10. Non-negotiable constraints
 
-- **Never compute IOL power** anywhere in the app. Astigmatism magnitude (`|K1-K2|`) is
-  the one derived clinical number, and it's basic geometry, not a power formula.
+- **Never compute IOL power** anywhere in the app. There are no biometry/refraction
+  number fields at all — everything clinical comes from the attached photos or the
+  doctor's own judgment, nothing is derived or calculated here.
 - **Rule engine stays pure** (`computePlan.ts`) — no UI code, no I/O, fully unit-tested.
 - **No lens-ranking algorithm.** The doctor picks the lens directly; don't reintroduce
   a data-driven suggestion without an explicit request to do so.

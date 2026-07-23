@@ -20,7 +20,6 @@ interface ExportRow {
   lens: string;
   specialProblems: string;
   refraction: string;
-  biometry: string;
   prepare: string;
 }
 
@@ -39,12 +38,6 @@ function buildRow(record: PatientRecord): ExportRow {
   if (record.macula === 'diseased') problems.push('Diseased macula');
   if (record.macula === 'unknown') problems.push('Macula unknown');
 
-  const biometryParts: string[] = [];
-  if (typeof record.axialLength === 'number') biometryParts.push(`AL ${record.axialLength}`);
-  if (typeof record.acDepth === 'number') biometryParts.push(`ACD ${record.acDepth}`);
-  if (typeof record.k1 === 'number') biometryParts.push(`K1 ${record.k1}`);
-  if (typeof record.k2 === 'number') biometryParts.push(`K2 ${record.k2}`);
-
   const prepare: string[] = [];
   if (record.pseudoexfoliation) prepare.push('CTR');
   if (record.pupilDilation === 'poor' || record.prostateMedication) prepare.push('Iris hooks');
@@ -57,7 +50,6 @@ function buildRow(record: PatientRecord): ExportRow {
     lens: record.chosenLens ?? '—',
     specialProblems: problems.join(', ') || '—',
     refraction: record.refractionImage ? 'Photo attached' : '—',
-    biometry: biometryParts.join(' / ') || '—',
     prepare: prepare.join(', ') || '—',
   };
 }
@@ -70,7 +62,6 @@ const COLUMNS: { key: keyof ExportRow; header: string }[] = [
   { key: 'lens', header: 'Lens' },
   { key: 'specialProblems', header: 'Special Problems' },
   { key: 'refraction', header: 'Refraction' },
-  { key: 'biometry', header: 'Biometry' },
   { key: 'prepare', header: 'Prepare' },
 ];
 

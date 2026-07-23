@@ -29,10 +29,6 @@ export interface PatientInput {
   prostateMedication: boolean;
   pupilDilation: PupilDilation;
   chosenLens?: ChosenLens;
-  axialLength?: number;
-  acDepth?: number;
-  k1?: number;
-  k2?: number;
   biometryImage?: string;
   refractionImage?: string;
 }

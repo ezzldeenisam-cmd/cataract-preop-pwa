@@ -1,12 +1,5 @@
 import type { PatientInput, Plan } from './types';
 
-export function computeAstigmatism(input: Pick<PatientInput, 'k1' | 'k2'>): number {
-  if (typeof input.k1 === 'number' && typeof input.k2 === 'number') {
-    return Math.abs(input.k1 - input.k2);
-  }
-  return 0;
-}
-
 function computeTests(input: PatientInput): string[] {
   const tests: string[] = ['Viral screen', 'Random blood sugar (RBS)', 'CBC'];
 

@@ -1,14 +1,12 @@
 import { useState } from 'react';
 import { compressImageToDataUrl } from '../image';
-import { computeAstigmatism } from '../rules/computePlan';
-import type { Eye, Maturity, MaculaStatus, Occupation, PatientInput, PupilDilation } from '../rules/types';
+import type { Eye, Maturity, MaculaStatus, Occupation, PupilDilation, PatientInput } from '../rules/types';
 import { ScanButton, type ScanStatus } from './ScanButton';
 import { SegmentedControl } from './SegmentedControl';
 
 interface IntakeFormProps {
   input: PatientInput;
   onChange: (patch: Partial<PatientInput>) => void;
-  onGenerate: () => void;
   onClear: () => void;
   onSave: () => void;
 }
@@ -41,7 +39,7 @@ const PUPIL_DILATION_OPTIONS: { value: PupilDilation; label: string }[] = [
   { value: 'poor', label: 'Poor' },
 ];
 
-export function IntakeForm({ input, onChange, onGenerate, onClear, onSave }: IntakeFormProps) {
+export function IntakeForm({ input, onChange, onClear, onSave }: IntakeFormProps) {
   const [biometryPhotoStatus, setBiometryPhotoStatus] = useState<ScanStatus>('idle');
   const [biometryPhotoError, setBiometryPhotoError] = useState<string>();
   const [refractionPhotoStatus, setRefractionPhotoStatus] = useState<ScanStatus>('idle');
@@ -69,21 +67,6 @@ export function IntakeForm({ input, onChange, onGenerate, onClear, onSave }: Int
       setRefractionPhotoError(err instanceof Error ? err.message : undefined);
       setRefractionPhotoStatus('error');
     }
-  }
-
-  function numberField(key: keyof PatientInput, label: string) {
-    const value = input[key];
-    return (
-      <label className="mini-field">
-        <span>{label}</span>
-        <input
-          type="number"
-          step="0.01"
-          value={typeof value === 'number' ? value : ''}
-          onChange={(e) => onChange({ [key]: e.target.value === '' ? undefined : Number(e.target.value) })}
-        />
-      </label>
-    );
   }
 
   return (
@@ -135,15 +118,6 @@ export function IntakeForm({ input, onChange, onGenerate, onClear, onSave }: Int
 
       <div className="field">
         <label>Biometry (from device photo)</label>
-        <div className="mini-fields">
-          {numberField('axialLength', 'AL (mm)')}
-          {numberField('acDepth', 'ACD (mm)')}
-          {numberField('k1', 'K1 (D)')}
-          {numberField('k2', 'K2 (D)')}
-        </div>
-        <p className="derived-value">
-          Astigmatism (K1 − K2): {computeAstigmatism(input).toFixed(2)} D
-        </p>
         <ScanButton
           label="Add Biometry Photo"
           busyLabel="Attaching…"
@@ -249,9 +223,6 @@ export function IntakeForm({ input, onChange, onGenerate, onClear, onSave }: Int
       </div>
 
       <div className="actions">
-        <button type="button" className="btn btn-primary" onClick={onGenerate}>
-          Generate Plan
-        </button>
         <button type="button" className="btn btn-secondary" onClick={onSave}>
           Save Patient to Record
         </button>
